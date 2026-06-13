@@ -10,25 +10,36 @@ PanelWindow {
 
     // --- Dark Frosted Theme Palette ---
     property color colBg: "#CC111217"         
-    property color colFg: "#e2e8f0"      
-    property color colMuted: "#4a5568"  
-    property color colAccent: "#60a5fa"      
+    property color colFg: "#f8fafc"      
+    property color colMuted: "#475569"  
+    property color colAccent: "#60a5fa"
     property string fontFamily: "JetBrainsMono Nerd Font"
     property int fontSize: 11           
+
+    // --- Component Accent Colors     
+    property color colNet: "#b19cd9"    
+    property color colCpu: "#93c5fd"   
+    property color colMem: "#f472b6"   
+    property color colClock: "#fff9c4"  
+    property color colBat: "#a7f3d0"   
 
     // --- Dynamic System Data ---
     property int cpuUsage: 0
     property int memUsage: 0
+    property string batUsage: "0%"
+    property string netStatus: "Offline"
 
     // Master system ticker
     Timer {
-        interval: 2000 // Update statistics every 2 seconds
+        interval: 2000 
         running: true
         repeat: true
         triggeredOnStart: true
         onTriggered: {
             cpuScript.running = true;
             memScript.running = true;
+            batScript.running = true;
+            netScript.running = true;
         }
     }
 
@@ -53,6 +64,49 @@ PanelWindow {
             onStreamFinished: {
                 if (this.text.trim() !== "") {
                     root.memUsage = Math.round(parseFloat(this.text.trim()));
+                }
+            }
+        }
+    }
+
+    // Process fetching Battery percentage and charging status
+    Process {
+        id: batScript
+        command: ["sh", "-c", "cat /sys/class/power_supply/BAT0/capacity && cat /sys/class/power_supply/BAT0/status"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim() !== "") {
+                    var lines = this.text.trim().split("\n");
+                    var pct = lines[0] ? lines[0] : "0";
+                    var status = lines[1] ? lines[1] : "Discharging";
+                    var suffix = (status === "Charging" || status === "Full") ? " ϟ" : "%";
+                    root.batUsage = pct + suffix;
+                }
+            }
+        }
+    }
+
+    // Process fetching Network status via NetworkManager CLI
+    Process {
+        id: netScript
+        command: ["sh", "-c", "nmcli -t -f TYPE,NAME connection show --active | head -n 1"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var output = this.text.trim();
+                if (output === "") {
+                    root.netStatus = "Offline";
+                } else {
+                    var parts = output.split(":");
+                    var type = parts[0];
+                    var name = parts[1];
+
+                    if (type.indexOf("wireless") !== -1) {
+                        root.netStatus = "WIFI: " + name;
+                    } else if (type.indexOf("ethernet") !== -1) {
+                        root.netStatus = "ETH: Connected";
+                    } else {
+                        root.netStatus = "Connected";
+                    }
                 }
             }
         }
@@ -86,7 +140,7 @@ PanelWindow {
 
                     Rectangle {
                         anchors.fill: parent
-                        color: parent.isActive ? "#2560a5fa" : "transparent"
+                        color: parent.isActive ? "#20e8bcf0" : "transparent"
                         radius: 3
                     }
 
@@ -108,28 +162,37 @@ PanelWindow {
 
         Item { Layout.fillWidth: true }
 
-        // CPU
+        // Network (White)
+        Text {
+            text: root.netStatus
+            color: root.netStatus === "Offline" ? root.colMuted : root.colNet
+            font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
+        }
+
+        Rectangle { width: 1; height: 10; color: root.colMuted } 
+
+        // CPU (Blue)
         Text {
             text: "CPU " + root.cpuUsage + "%"
-            color: root.colFg
+            color: root.colCpu
             font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
         }
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // Memory
+        // Memory (Pink)
         Text {
             text: "MEM " + root.memUsage + "%"
-            color: root.colFg
+            color: root.colMem
             font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
         }
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // Clock
+        // Clock (White)
         Text {
             id: clock
-            color: root.colFg
+            color: root.colClock
             font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
             text: Qt.formatDateTime(new Date(), "ddd, MMM dd  ·  HH:mm")
             
@@ -140,5 +203,15 @@ PanelWindow {
                 onTriggered: clock.text = Qt.formatDateTime(new Date(), "ddd, MMM dd  ·  HH:mm")
             }
         }
+
+        Rectangle { width: 1; height: 10; color: root.colMuted } 
+
+        // Battery (Minty White-Green)
+        Text {
+            text: "BAT " + root.batUsage
+            color: root.colBat
+            font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
+        }
     }
 }
+
