@@ -162,7 +162,7 @@ PanelWindow {
 
         Item { Layout.fillWidth: true }
 
-        // Network (White)
+        // Network
         Text {
             text: root.netStatus
             color: root.netStatus === "Offline" ? root.colMuted : root.colNet
@@ -171,7 +171,7 @@ PanelWindow {
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // CPU (Blue)
+        // CPU
         Text {
             text: "CPU " + root.cpuUsage + "%"
             color: root.colCpu
@@ -180,7 +180,7 @@ PanelWindow {
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // Memory (Pink)
+        // Memory
         Text {
             text: "MEM " + root.memUsage + "%"
             color: root.colMem
@@ -189,7 +189,7 @@ PanelWindow {
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // Clock (White)
+        // Clock
         Text {
             id: clock
             color: root.colClock
@@ -206,7 +206,7 @@ PanelWindow {
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
-        // Battery (Minty White-Green)
+        // Battery
         Text {
             text: "BAT " + root.batUsage
             color: root.colBat
