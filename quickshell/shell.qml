@@ -22,16 +22,18 @@ PanelWindow {
     property color colMem: "#f472b6"   
     property color colClock: "#fff9c4"  
     property color colBat: "#a7f3d0"   
+    property color colVol: "#fca5a5"   // Soft warm accent for volume
 
     // --- Dynamic System Data ---
     property int cpuUsage: 0
     property int memUsage: 0
     property string batUsage: "0%"
     property string netStatus: "Offline"
+    property string volStatus: "100%"  
 
     // Master system ticker
     Timer {
-        interval: 2000 
+        interval: 500 
         running: true
         repeat: true
         triggeredOnStart: true
@@ -40,6 +42,7 @@ PanelWindow {
             memScript.running = true;
             batScript.running = true;
             netScript.running = true;
+            volScript.running = true; 
         }
     }
 
@@ -111,6 +114,22 @@ PanelWindow {
             }
         }
     }
+
+    // Process fetching native PipeWire volume via wireplumber (wpctl)
+    Process {
+        id: volScript
+        command: ["sh", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{ if ($3 == \"[MUTED]\") print \"Muted\"; else printf \"%.0f%%\\n\", $2*100 }'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim() !== "") {
+                    root.volStatus = this.text.trim();
+                }
+            }
+        }
+    }
+
+    // Reusable process runner for mutations
+    Process { id: volControl }
 
     // --- Window Settings ---
     anchors.top: true
@@ -189,6 +208,38 @@ PanelWindow {
 
         Rectangle { width: 1; height: 10; color: root.colMuted } 
 
+        // Volume (PipeWire Native)
+        Text {
+            text: "VOL " + root.volStatus
+            color: root.volStatus === "Muted" ? root.colMuted : root.colVol
+            font { family: root.fontFamily; pixelSize: root.fontSize; bold: true }
+
+            MouseArea {
+                anchors.fill: parent
+                scrollGestureEnabled: true
+                
+                // Click to Toggle Mute
+                onClicked: {
+                    volControl.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"];
+                    volControl.running = true;
+                    volScript.running = true; // Trigger instant panel update
+                }
+                
+                // Scroll up/down to shift volume in 5% steps
+                onWheel: (wheel) => {
+                    if (wheel.angleDelta.y > 0) {
+                        volControl.command = ["wpctl", "set-volume", "-l", "1.5", "@DEFAULT_AUDIO_SINK@", "5%+"];
+                    } else {
+                        volControl.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"];
+                    }
+                    volControl.running = true;
+                    volScript.running = true; // Trigger instant panel update
+                }
+            }
+        }
+
+        Rectangle { width: 1; height: 10; color: root.colMuted } 
+
         // Clock
         Text {
             id: clock
@@ -214,4 +265,3 @@ PanelWindow {
         }
     }
 }
-
