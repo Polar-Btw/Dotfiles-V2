@@ -8,7 +8,7 @@ import QtQuick.Layouts
 PanelWindow {
     id: root
 
-    // --- Theme Palette ---
+    // --- Dark Frosted Theme Palette ---
     property color colBg: "#CC111217"         
     property color colFg: "#f8fafc"      
     property color colMuted: "#475569"  
@@ -22,7 +22,7 @@ PanelWindow {
     property color colMem: "#f472b6"   
     property color colClock: "#fff9c4"  
     property color colBat: "#a7f3d0"   
-    property color colVol: "#fca5a5"   
+    property color colVol: "#fca5a5"   // Soft warm accent for volume
 
     // --- Dynamic System Data ---
     property int cpuUsage: 0

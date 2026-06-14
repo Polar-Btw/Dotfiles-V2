@@ -19,32 +19,35 @@ local menu        = "rofi -show drun"
 local browser     = "firefox"
 local screenshot  = "hyprshot -m output"
 local clipboard   = "cliphist list | rofi -dmenu | cliphist decode | wl-copy"
+local menu_network = "networkmanager_dmenu"
 
 -------------------
 ---- AUTOSTART ----
 -------------------
 
-hl.on("hyprland.start", function () 
-	
+hl.on("hyprland.start", function () 	
 	hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
-	hl.exec_cmd("hyprctl setcursor Bibata-Modern-Ice 24")
-	hl.exec_cmd("sleep 1 && swaybg -i ~/Pictures/wallpapers/wallpaper.png")
+	os.execute("hyprctl setcursor Bibata-Modern-Ice 24 &")
+	os.execute("gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Ice' &")
+	hl.exec_cmd("sleep 1 && swaybg -i ~/Pictures/wallpapers/old.png")
 	hl.exec_cmd("sleep 1.5 && quickshell")
 	hl.exec_cmd("mako")
 	hl.exec_cmd("cliphist wipe")
 	hl.exec_cmd("wl-paste --type text --watch cliphist store")
 	hl.exec_cmd("wl-paste --type image --watch cliphist store")
-
 end)
 
 -------------------------------
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
+hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
+hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("HYPRSHOT_DIR" , "~/Pictures/Screenshots")
+hl.env("HYPRSHOT_DIR" , "/home/aryu/Pictures/Screenshots")
 hl.env("GTK_THEME", "Breeze-Dark")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+hl.env("QT_AUTO_SCREEN_SCALE_FACTOR","0.5")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 
 -----------------------
@@ -53,8 +56,8 @@ hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 
 hl.config({
     general = {
-        gaps_in  = 1,
-        gaps_out = 1,
+        gaps_in  = 0,
+        gaps_out = 0,
 
         border_size = 1,
 
@@ -156,7 +159,6 @@ hl.config({
     },
 })
 
-
 ---------------
 ---- INPUT ----
 ---------------
@@ -170,9 +172,11 @@ hl.config({
         kb_rules   = "",
 
         follow_mouse = 1,
+	scroll_method = "on_button_down",
+	scroll_button = 274,
+	natural_scroll = true,
 
-        sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
-
+        sensitivity = -0.5,
         touchpad = {
             natural_scroll = true,
         },
@@ -203,9 +207,9 @@ hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " -e yazi"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
-hl.bind(mainMod .. " + S", hl.dsp.exec_cmd(screenshot))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd(menu_network))
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 
 -- Maximize a Window
@@ -213,6 +217,9 @@ hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = 1, action = "toggle
 
 -- Open Clipboard
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(clipboard))
+
+-- take screenshot
+hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -227,10 +234,6 @@ for i = 1, 10 do
     hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}))
     hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }))
 end
-
--- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
@@ -303,6 +306,7 @@ hl.layer_rule({
     match = "^(quickshell.*)$"
 })
 
+-- (Optional) If you want a deep frosted look, ensure your global blur parameters are set
 hl.config({
     decoration = {
         blur = {
